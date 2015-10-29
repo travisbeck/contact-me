@@ -1,6 +1,9 @@
 from bottle import Bottle, request, redirect
-import smtplib
 from email.mime.text import MIMEText
+import base64
+import httplib2
+import oauth2client
+from apiclient import discovery
 from validate_email_address import validate_email
 import logging
 import logging.handlers
@@ -11,7 +14,6 @@ LOG_PATH = os.path.join(os.getcwd(), LOG_FILENAME)
 DOMAIN = 'brontosaurus.net'
 RECIPIENT = 'travis@brontosaurus.net'
 GMAIL_USERNAME = 'travis@brontosaurus.net'
-GMAIL_APP_PASSWORD = 'wmpcueqdfqidtnar'
 RECAPTCHA_SITE_KEY = '6Ldq1g8TAAAAAK4E_wD7tLLydYP2OvLhjbsbcAcx'
 RECAPTCHA_SECRET = '6Ldq1g8TAAAAAKseL30KSHc8WCGmlZlrwX9vyWS2'
 
@@ -38,11 +40,26 @@ def send_mail(recipient, sender, name, message):
     msg['Reply-To'] = sender
     msg['To'] = recipient
 
-    server = smtplib.SMTP('smtp.gmail.com:587')
-    server.starttls()
-    server.login(GMAIL_USERNAME, GMAIL_APP_PASSWORD)
-    server.sendmail(sender, recipient, msg.as_string())
-    server.quit()
+    LOGGER.info(msg.as_string())
+
+    encoded_message = {'raw': base64.urlsafe_b64encode(msg.as_string())}
+
+    credential_path = os.path.join(os.getcwd(), 'credentials.json')
+    store = oauth2client.file.Storage(credential_path)
+    credentials = store.get()
+    if not credentials or credentials.invalid:
+        raise Exception('Invalid credentials - rerun authorize.py')
+
+    http = credentials.authorize(httplib2.Http())
+    service = discovery.build('gmail', 'v1', http=http)
+
+    try:
+        sent_message = (service.users().messages().send(userId=GMAIL_USERNAME, body=encoded_message)
+                .execute())
+        LOGGER.info('Message sent - ID: %s' % sent_message['id'])
+        return sent_message
+    except errors.HttpError, error:
+        LOGGER.error('No message sent - Error: %s' % error)
 
 @app.post('/contact')
 def contact():
@@ -50,7 +67,7 @@ def contact():
         email = request.POST.get("email", "").strip()
         name = request.POST.get("name", "").strip()
         message = request.POST.get("message", "").strip()
-        LOGGER.info('Recieved:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
+        LOGGER.info('Received form:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
                     % (email, name, request.remote_addr, message))
 
         if not email:
@@ -63,7 +80,6 @@ def contact():
             raise Exception('Invalid email address')
         else:
             send_mail(RECIPIENT, email, name, message);
-            LOGGER.info('email sent')
     except Exception, e:
         LOGGER.error(e.message)
         LOGGER.info('no email sent')
