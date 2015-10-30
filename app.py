@@ -9,43 +9,42 @@ import logging
 import logging.handlers
 import os
 import requests
+import json
 
-LOG_FILENAME = 'contact-me.log'
-LOG_PATH = os.path.join(os.getcwd(), LOG_FILENAME)
-DOMAIN = 'brontosaurus.net'
-RECIPIENT = 'travis@brontosaurus.net'
-GMAIL_USERNAME = 'travis@brontosaurus.net'
-RECAPTCHA_SITE_KEY = '6Ldq1g8TAAAAAK4E_wD7tLLydYP2OvLhjbsbcAcx'
-RECAPTCHA_SECRET = '6Ldq1g8TAAAAAKseL30KSHc8WCGmlZlrwX9vyWS2'
+config_path = os.path.join(os.getcwd(), 'config.json')
+
+with open(config_path) as config_file:
+    config = json.load(config_file)
+    config['log_path'] = os.path.join(os.getcwd(), config['log_filename'])
 
 # set up logging
-LOGGER = logging.getLogger('contact-me')
-LOGGER.setLevel(logging.INFO)
+logger = logging.getLogger('contact-me')
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler = logging.handlers.RotatingFileHandler(
-            LOG_FILENAME, maxBytes=1000000, backupCount=5)
+            config['log_path'], maxBytes=1000000, backupCount=5)
 handler.setFormatter(formatter)
-LOGGER.addHandler(handler)
+logger.addHandler(handler)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 console.setFormatter(formatter)
-LOGGER.addHandler(console)
+logger.addHandler(console)
 
 app = Bottle()
 
 def send_mail(recipient, sender, name, message):
     msg = MIMEText(message)
 
-    msg['Subject'] = '[%s] Contact form submission by %s' % (DOMAIN, name)
+    msg['Subject'] = '[%s] Contact form submission by %s' % (config['domain'], name)
     msg['From'] = sender
     msg['Reply-To'] = sender
     msg['To'] = recipient
 
-    LOGGER.info(msg.as_string())
+    logger.info(msg.as_string())
 
     encoded_message = {'raw': base64.urlsafe_b64encode(msg.as_string())}
 
-    credential_path = os.path.join(os.getcwd(), 'credentials.json')
+    credential_path = os.path.join(os.getcwd(), config['credentials_file'])
     store = oauth2client.file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
@@ -55,12 +54,12 @@ def send_mail(recipient, sender, name, message):
     service = discovery.build('gmail', 'v1', http=http)
 
     try:
-        sent_message = (service.users().messages().send(userId=GMAIL_USERNAME, body=encoded_message)
+        sent_message = (service.users().messages().send(userId=config['gmail_username'], body=encoded_message)
                 .execute())
-        LOGGER.info('Message sent - ID: %s' % sent_message['id'])
+        logger.info('Message sent - ID: %s' % sent_message['id'])
         return sent_message
     except errors.HttpError, error:
-        LOGGER.error('No message sent - Error: %s' % error)
+        logger.error('No message sent - Error: %s' % error)
 
 @app.get('/ip')
 def ip():
@@ -74,7 +73,7 @@ def contact():
         name = request.POST.get("name", "").strip()
         message = request.POST.get("message", "").strip()
         recaptcha_response = request.POST.get("g-recaptcha-response", "").strip()
-        LOGGER.info('Received form:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
+        logger.info('Received form:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
                     % (email, name, request.remote_addr, message))
 
         if not email:
@@ -86,7 +85,7 @@ def contact():
         elif not validate_email(email):
             raise Exception('Invalid email address')
         else:
-            recaptcha_data = { 'secret': RECAPTCHA_SECRET,
+            recaptcha_data = { 'secret': config['recaptcha_secret'],
                                'response': recaptcha_response,
                                'remoteip': request.remote_addr }
             verify_response = requests.post('https://www.google.com/recaptcha/api/siteverify',
@@ -94,13 +93,13 @@ def contact():
 
             data = verify_response.json()
             if not data or not data['success']:
-                LOGGER.info('recaptcha response %s' % verify_response.text)
+                logger.info('recaptcha response %s' % verify_response.text)
                 raise Exception('Recaptcha fail')
             else:
-                send_mail(RECIPIENT, email, name, message);
+                send_mail(config['recipient'], email, name, message);
     except Exception, e:
-        LOGGER.error(e.message)
-        LOGGER.info('no email sent')
+        logger.error(e.message)
+        logger.info('no email sent')
         if e.message == 'Recaptcha fail':
             return redirect('/')
         else:
@@ -110,4 +109,4 @@ def contact():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    app.run(port=5000)

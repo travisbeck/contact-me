@@ -1,0 +1,8 @@
+{
+    "domain": "<your-domain-here>",
+    "recipient": "<email-address-to-send-to>",
+    "gmail_username": "<gmail-address-to-send-through>",
+    "recaptcha_secret": "<recaptcha-secret>",
+    "log_filename": "contact-me.log",
+    "credentials_file": "credentials.json"
+}
