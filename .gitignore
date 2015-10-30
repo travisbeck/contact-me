@@ -1,4 +1,6 @@
 contact-me.log
+client_secret.json
+credentials.json
 *.pyc*
 *swp
 .coverage
