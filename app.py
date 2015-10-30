@@ -61,6 +61,10 @@ def send_mail(recipient, sender, name, message):
     except errors.HttpError, error:
         LOGGER.error('No message sent - Error: %s' % error)
 
+@app.get('/ip')
+def ip():
+    return request.remote_addr
+
 @app.post('/contact')
 def contact():
     try:
