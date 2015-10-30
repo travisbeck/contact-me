@@ -8,6 +8,7 @@ from validate_email_address import validate_email
 import logging
 import logging.handlers
 import os
+import requests
 
 LOG_FILENAME = 'contact-me.log'
 LOG_PATH = os.path.join(os.getcwd(), LOG_FILENAME)
@@ -76,14 +77,6 @@ def contact():
         LOGGER.info('Received form:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
                     % (email, name, request.remote_addr, message))
 
-        recaptcha_data = { 'secret': RECAPTCHA_SECRET,
-                           'response': recaptcha_response,
-                           'remoteip': request.remote_addr }
-        res = requests.post('https://www.google.com/recaptcha/api/siteverify',
-                data=recaptcha_data)
-
-        LOGGER.info(res)
-
         if not email:
             raise Exception('Missing email')
         elif not name:
@@ -93,7 +86,17 @@ def contact():
         elif not validate_email(email):
             raise Exception('Invalid email address')
         else:
-            send_mail(RECIPIENT, email, name, message);
+            recaptcha_data = { 'secret': RECAPTCHA_SECRET,
+                               'response': recaptcha_response,
+                               'remoteip': request.remote_addr }
+            verify_response = requests.post('https://www.google.com/recaptcha/api/siteverify',
+                                            data=recaptcha_data)
+
+            if not verify_response or not verify_response.json().success:
+                LOGGER.info('recaptcha response %s' % verify_response.text)
+                raise Exception('Recaptcha fail')
+            else:
+                send_mail(RECIPIENT, email, name, message);
     except Exception, e:
         LOGGER.error(e.message)
         LOGGER.info('no email sent')
