@@ -92,7 +92,8 @@ def contact():
             verify_response = requests.post('https://www.google.com/recaptcha/api/siteverify',
                                             data=recaptcha_data)
 
-            if not verify_response or not verify_response.json().success:
+            data = verify_response.json()
+            if not data or not data['success']:
                 LOGGER.info('recaptcha response %s' % verify_response.text)
                 raise Exception('Recaptcha fail')
             else:
@@ -100,7 +101,10 @@ def contact():
     except Exception, e:
         LOGGER.error(e.message)
         LOGGER.info('no email sent')
-        return redirect("/#whoops")
+        if e.message == 'Recaptcha fail':
+            return redirect('/')
+        else:
+            return redirect("/#whoops")
 
     return redirect("/#thanks")
 
