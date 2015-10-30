@@ -1,4 +1,5 @@
 import os
+import json
 
 from apiclient import discovery
 import oauth2client
@@ -12,16 +13,16 @@ except ImportError:
     flags = None
 
 SCOPES = 'https://www.googleapis.com/auth/gmail.send'
-CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'contact-me'
+
+with open('config.json') as config_file:
+    config = json.load(config_file)
 
 def main():
-    credential_path = os.path.join(os.getcwd(), 'credentials.json')
-    store = oauth2client.file.Storage(credential_path)
+    store = oauth2client.file.Storage(config['credentials_file'])
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-        flow.user_agent = APPLICATION_NAME
+        flow = client.flow_from_clientsecrets(config['client_secret_file'], SCOPES)
+        flow.user_agent = 'contact-me'
         if flags:
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatability with Python 2.6

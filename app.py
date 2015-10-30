@@ -11,18 +11,15 @@ import os
 import requests
 import json
 
-config_path = os.path.join(os.getcwd(), 'config.json')
-
-with open(config_path) as config_file:
+with open('config.json') as config_file:
     config = json.load(config_file)
-    config['log_path'] = os.path.join(os.getcwd(), config['log_filename'])
 
 # set up logging
 logger = logging.getLogger('contact-me')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler = logging.handlers.RotatingFileHandler(
-            config['log_path'], maxBytes=1000000, backupCount=5)
+            config['log_file'], maxBytes=1000000, backupCount=5)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 console = logging.StreamHandler()
@@ -44,8 +41,7 @@ def send_mail(recipient, sender, name, message):
 
     encoded_message = {'raw': base64.urlsafe_b64encode(msg.as_string())}
 
-    credential_path = os.path.join(os.getcwd(), config['credentials_file'])
-    store = oauth2client.file.Storage(credential_path)
+    store = oauth2client.file.Storage(config['credentials_file'])
     credentials = store.get()
     if not credentials or credentials.invalid:
         raise Exception('Invalid credentials - rerun authorize.py')
