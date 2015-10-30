@@ -1,4 +1,4 @@
-from bottle import Bottle, request, redirect
+from bottle import Bottle, request, response, redirect
 from email.mime.text import MIMEText
 import base64
 import httplib2
@@ -63,7 +63,8 @@ def send_mail(recipient, sender, name, message):
 
 @app.get('/ip')
 def ip():
-    return request.remote_addr
+    response.content_type = 'text/plain'
+    return request.remote_addr + '\n'
 
 @app.post('/contact')
 def contact():
