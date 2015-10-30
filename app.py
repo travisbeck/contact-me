@@ -72,8 +72,17 @@ def contact():
         email = request.POST.get("email", "").strip()
         name = request.POST.get("name", "").strip()
         message = request.POST.get("message", "").strip()
+        recaptcha_response = request.POST.get("g-recaptcha-response", "").strip()
         LOGGER.info('Received form:\nemail: %s\nname: %s\nip: %s\nmessage: %s'
                     % (email, name, request.remote_addr, message))
+
+        recaptcha_data = { 'secret': RECAPTCHA_SECRET,
+                           'response': recaptcha_response,
+                           'remoteip': request.remote_addr }
+        res = requests.post('https://www.google.com/recaptcha/api/siteverify',
+                data=recaptcha_data)
+
+        LOGGER.info(res)
 
         if not email:
             raise Exception('Missing email')
