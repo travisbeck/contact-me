@@ -35,7 +35,7 @@ app = Bottle()
 def send_mail(recipient, sender, name, message):
     msg = MIMEText(message)
 
-    msg['Subject'] = '[%s] Contact form submission by %s' % (config['domain'], name)
+    msg['Subject'] = '[%s] Contact request from %s' % (config['domain'], name)
     msg['From'] = sender
     msg['Reply-To'] = sender
     msg['To'] = recipient
