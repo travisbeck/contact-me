@@ -27,7 +27,7 @@ def main():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatability with Python 2.6
             credentials = tools.run(flow, store)
-        print 'Storing credentials to ' + credential_path
+        print 'Storing credentials to ' + config['credentials_file']
 
 if __name__ == '__main__':
     main()
