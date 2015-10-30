@@ -15,17 +15,24 @@ On the google developers console (https://console.developers.google.com):
 4. Rename the file 'client_secret.json' and add it to your project
 5. On your local machine (somewhere that can load a web page), run:
 
- python authorize.py
+```
+python authorize.py
+```
 
-6. Update 'config.json' with your information, including recaptcha secret
-7. Setup virtualenv and install dependencies:
+6. Setup recaptcha through https://www.google.com/recaptcha/. Make note of your key and secret
+7. Update 'config.json' with your information, including recaptcha secret
+8. Setup virtualenv and install dependencies:
 
- virtualenv venv
- . venv/bin/activate
- pip install -r requirements.txt
+```
+virtualenv venv
+. venv/bin/activate
+pip install -r requirements.txt
+```
 
-7. Run the app
+9. Run the app
 
- python app.py
+```
+python app.py
+```
 
-8. Deploy!
+10. Deploy!
