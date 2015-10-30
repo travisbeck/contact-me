@@ -1,7 +1,11 @@
 # contact-me
-Super simple contact submission form app for my personal website
+Super simple contact submission form app
 
-### Setup GMail API access
+I built this app for my personal website, and there isn't much to it, but it
+does send through the Gmail API and enforces recaptcha. Let me know if this is
+useful to you. Thanks!
+
+### Setup
 
 On the google developers console (https://console.developers.google.com):
 
@@ -9,11 +13,17 @@ On the google developers console (https://console.developers.google.com):
 2. Add an OAuth2 client with an application type of 'Other'
 3. Click the 'Download JSON' button
 4. Rename the file 'client_secret.json' and add it to your project
-5. On your local machine (somewhere that can load a web page), run
+5. On your local machine (somewhere that can load a web page), run:
 
  python authorize.py
 
-6. Update 'config.json' with your information
+6. Update 'config.json' with your information, including recaptcha secret
+7. Setup virtualenv and install dependencies:
+
+ virtualenv venv
+ . venv/bin/activate
+ pip install -r requirements.txt
+
 7. Run the app
 
  python app.py
